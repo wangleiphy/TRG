@@ -9,7 +9,8 @@ function TRG(K, Dcut, no_iter)
         T[r, u, l, d] = 0.5*(1 + (2*r-3)*(2*u-3)*(2*l-3)*(2*d-3))*exp(2*K*(r+u+l+d-6))
     end
 
-    for n in collect(no_iter)
+    for n in collect(1:no_iter)
+        println(n)
         D_new = min(D^2, Dcut)
         inds_new = collect(1:D_new)
 
@@ -59,5 +60,5 @@ function TRG(K, Dcut, no_iter)
     Z
 end
 
-Z = TRG(1.0, 6, 3)
+Z = TRG(1.0, 8, 5)
 println(Z)
