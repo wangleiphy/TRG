@@ -4,7 +4,7 @@ function TRG(K, Dcut, no_iter)
 
     T = zeros(Float64, D, D, D, D)
     for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
-        T[r, u, l, d] = 0.5*(1 + (2*r-1)*(2*u-1)*(2*l-1)*(2*d-1))*exp(2*K*(r+u+l+d-2))
+        T[r, u, l, d] = 0.5*(1 + (2*r-3)*(2*u-3)*(2*l-3)*(2*d-3))*exp(2*K*(r+u+l+d-6))
     end
 
     for n in collect(no_iter)
@@ -25,20 +25,20 @@ function TRG(K, Dcut, no_iter)
 
         U, L, V = svd(Ma)
         L = sort(L)[::-1][1:D_new]
-        for x, y, m in product(inds, inds, inds_new)
+        for x, y, m in collect(Iterators.product(inds, inds, inds_new))
             S1[x, y, m] = sqrt(L[m]) * U[x+D*y, m]
             S3[x, y, m] = sqrt(L[m]) * V[m, x+D*y]
         end 
         U, L, V = svd(Mb)
         L = sort(L)[::-1][1:D_new]
-        for x, y, m in product(inds, inds, inds_new)
+        for x, y, m in collect(Iterators.product(inds, inds, inds_new))
             S2[x, y, m] = sqrt(L[m]) * U[x+D*y, m]
             S4[x, y, m] = sqrt(L[m]) * V[m, x+D*y]
         end 
 
         T_new = zeros(Float64, D_new, D_new, D_new)
-        for r, u, l, d in product(inds, inds, inds, inds) 
-            for a, b, g, w in product(inds, inds, inds, inds) 
+        for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
+            for a, b, g, w in collect(Iterators.product(inds, inds, inds, inds))
                 T_new[r, u, l, d] += S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
             end
         end
@@ -50,7 +50,7 @@ function TRG(K, Dcut, no_iter)
     end
 
     Z = 0.0
-    for r, u, l, d in product(inds, inds, inds, inds) 
+    for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
         Z += T[r, u, l, d]
     end
 
