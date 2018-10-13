@@ -1,9 +1,11 @@
+using LinearAlgebra:svd
+
 function TRG(K, Dcut, no_iter)
     D = 2
     inds = collect(1:D) 
 
     T = zeros(Float64, D, D, D, D)
-    for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
+    for r in inds, u in inds, l in inds, d in inds
         T[r, u, l, d] = 0.5*(1 + (2*r-3)*(2*u-3)*(2*l-3)*(2*d-3))*exp(2*K*(r+u+l+d-6))
     end
 
@@ -13,9 +15,9 @@ function TRG(K, Dcut, no_iter)
 
         Ma = zeros(Float64, D^2, D^2)
         Mb = zeros(Float64, D^2, D^2)
-        for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
-            Ma[l + D*u, r + D*d] = T[r, u, l, d]
-            Mb[l + D*d, r + D*u] = T[r, u, l, d]
+        for r in inds, u in inds, l in inds, d in inds
+            Ma[l + D*(u-1), r + D*(d-1)] = T[r, u, l, d]
+            Mb[l + D*(d-1), r + D*(u-1)] = T[r, u, l, d]
         end
 
         S1 = zeros(Float64, D, D, D_new)
@@ -24,21 +26,21 @@ function TRG(K, Dcut, no_iter)
         S4 = zeros(Float64, D, D, D_new)
 
         U, L, V = svd(Ma)
-        L = sort(L)[::-1][1:D_new]
-        for x, y, m in collect(Iterators.product(inds, inds, inds_new))
-            S1[x, y, m] = sqrt(L[m]) * U[x+D*y, m]
-            S3[x, y, m] = sqrt(L[m]) * V[m, x+D*y]
+        L = sort(L)[end:-1:1][1:D_new]
+        for x in inds, y in inds, m in inds_new
+            S1[x, y, m] = sqrt(L[m]) * U[x+D*(y-1), m]
+            S3[x, y, m] = sqrt(L[m]) * V[m, x+D*(y-1)]
         end 
         U, L, V = svd(Mb)
-        L = sort(L)[::-1][1:D_new]
-        for x, y, m in collect(Iterators.product(inds, inds, inds_new))
-            S2[x, y, m] = sqrt(L[m]) * U[x+D*y, m]
-            S4[x, y, m] = sqrt(L[m]) * V[m, x+D*y]
+        L = sort(L)[end:-1:1][1:D_new]
+        for x in inds, y in inds, m in inds_new
+            S2[x, y, m] = sqrt(L[m]) * U[x+D*(y-1), m]
+            S4[x, y, m] = sqrt(L[m]) * V[m, x+D*(y-1)]
         end 
 
-        T_new = zeros(Float64, D_new, D_new, D_new)
-        for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
-            for a, b, g, w in collect(Iterators.product(inds, inds, inds, inds))
+        T_new = zeros(Float64, D_new, D_new, D_new, D_new)
+        for r in inds_new, u in inds_new, l in inds_new, d in inds_new
+            for a in inds, b in inds, g in inds, w in inds
                 T_new[r, u, l, d] += S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
             end
         end
@@ -50,11 +52,12 @@ function TRG(K, Dcut, no_iter)
     end
 
     Z = 0.0
-    for r, u, l, d in collect(Iterators.product(inds, inds, inds, inds))
+    for r in inds, u in inds, l in inds, d in inds
         Z += T[r, u, l, d]
     end
 
     Z
 end
 
-TRG(1.0, 6, 3)
+Z = TRG(1.0, 6, 3)
+println(Z)
