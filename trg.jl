@@ -12,7 +12,14 @@ function TRG(K, Dcut, no_iter)
     
     lnZ = 0.0 
     for n in collect(1:no_iter)
-        D_new = min(D^2, Dcut)
+        
+        #println(n, maximum(T), minimum(T))
+        #maxval = maximum(T)
+        #T = T/maxval 
+        #lnZ += 2*(no_iter-n+1)*log(maxval)
+
+        D_new = D^2
+        #D_new = min(D^2, Dcut)
         inds_new = collect(1:D_new)
 
         Ma = zeros(Float64, D^2, D^2)
@@ -28,6 +35,7 @@ function TRG(K, Dcut, no_iter)
         S4 = zeros(Float64, D, D, D_new)
 
         U, L, V = svd(Ma)
+        println(L)
         for x in inds, y in inds, m in inds_new
             S1[x, y, m] = sqrt(L[m]) * U[x+D*(y-1), m]
             S3[x, y, m] = sqrt(L[m]) * V[m, x+D*(y-1)]
@@ -48,14 +56,10 @@ function TRG(K, Dcut, no_iter)
 
         D = D_new
         inds = inds_new 
-        #maxval = maximum(T_new)
-        #lnZ += 2*(no_iter-n)*log(maxval)
-        #T = T_new/maxval
         T = T_new
     end
-    println(sum(T))
-    lnZ += log(sum(T)) 
+    lnZ += log(sum(T))
 end
 
-lnZ = TRG(0.44, 10, 1)
-println(lnZ)
+lnZ = TRG(0.44, 4, 2)
+println(exp(lnZ))
