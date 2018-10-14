@@ -60,9 +60,10 @@ function TRG(K, Dcut, no_iter)
     lnZ += log(sum(T))
 end
 
-beta = 0.44
 Dcut = 20
-for n in collect(1:2:20)
-    lnZ = TRG(beta, Dcut, n)
-    println(n, " ", lnZ/2^n)
+n = 20
+
+for K in collect(0.1:0.1:2.0)
+    lnZ = TRG(K, Dcut, n)
+    println(K, " ", lnZ/2^(n+1))
 end 
