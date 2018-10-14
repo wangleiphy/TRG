@@ -6,8 +6,13 @@ function TRG(K, Dcut, no_iter)
     inds = collect(1:D) 
 
     T = zeros(Float64, D, D, D, D)
-    for r in inds, u in inds, l in inds, d in inds
-        T[r, u, l, d] = 0.5*(1 + (2*r-3)*(2*u-3)*(2*l-3)*(2*d-3))*exp(2*K*(r+u+l+d-6))
+    M = [[sqrt(cosh(K)) sqrt(sinh(K))]; 
+         [sqrt(cosh(K)) -sqrt(sinh(K))];
+         ]
+    for i in inds, j in inds, k in inds, l in inds
+        for a in inds
+            T[i, j, k, l] += M[a, i] * M[a, j] * M[a, k] * M[a, l]
+        end
     end
 
     lnZ = 0.0 
@@ -60,10 +65,10 @@ function TRG(K, Dcut, no_iter)
     lnZ += log(sum(T))
 end
 
-Dcut = 20
-n = 20
+Dcut = 10
+n = 10
 
-for K in collect(0.1:0.1:2.0)
+for K in collect(0.0:0.1:2.0)
     lnZ = TRG(K, Dcut, n)
-    println(K, " ", lnZ/2^(n+1))
+    println(K, " ", lnZ/2^n)
 end 
