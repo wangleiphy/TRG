@@ -1,7 +1,7 @@
 using LinearAlgebra:svd 
 using TensorOperations
 
-function TRG(K, Dcut, no_iter)
+function TRG(K::Float64, Dcut::Int, no_iter::Int)
     D = 2
     inds = collect(1:D) 
 
@@ -23,7 +23,6 @@ function TRG(K, Dcut, no_iter)
         T = T/maxval 
         lnZ += 2^(no_iter-n+1)*log(maxval)
 
-        #D_new = D^2
         D_new = min(D^2, Dcut)
         inds_new = collect(1:D_new)
 
@@ -65,8 +64,8 @@ function TRG(K, Dcut, no_iter)
     lnZ += log(sum(T))
 end
 
-Dcut = 12
-n = 10
+Dcut = 24
+n = 20
 
 for K in collect(0.0:0.1:2.0)
     lnZ = TRG(K, Dcut, n)
