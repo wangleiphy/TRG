@@ -65,7 +65,7 @@ function TRG(K, Dcut, no_iter)
     lnZ += log(sum(T))
 end
 
-Dcut = 10
+Dcut = 12
 n = 10
 
 for K in collect(0.0:0.1:2.0)
