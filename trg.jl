@@ -1,4 +1,4 @@
-using LinearAlgebra:svd
+using LinearAlgebra:svd, Diagonal
 using TensorOperations
 
 function TRG(K, Dcut, no_iter)
@@ -9,7 +9,7 @@ function TRG(K, Dcut, no_iter)
     for r in inds, u in inds, l in inds, d in inds
         T[r, u, l, d] = 0.5*(1 + (2*r-3)*(2*u-3)*(2*l-3)*(2*d-3))*exp(2*K*(r+u+l+d-6))
     end
-    
+
     lnZ = 0.0 
     for n in collect(1:no_iter)
         
@@ -34,16 +34,15 @@ function TRG(K, Dcut, no_iter)
         S3 = zeros(Float64, D, D, D_new)
         S4 = zeros(Float64, D, D, D_new)
 
-        U, L, V = svd(Ma)
-        println(L)
+        F = svd(Ma)
         for x in inds, y in inds, m in inds_new
-            S1[x, y, m] = sqrt(L[m]) * U[x+D*(y-1), m]
-            S3[x, y, m] = sqrt(L[m]) * V[m, x+D*(y-1)]
+            S1[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
+            S3[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
         end 
-        U, L, V = svd(Mb)
+        F = svd(Mb)
         for x in inds, y in inds, m in inds_new
-            S2[x, y, m] = sqrt(L[m]) * U[x+D*(y-1), m]
-            S4[x, y, m] = sqrt(L[m]) * V[m, x+D*(y-1)]
+            S2[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
+            S4[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
         end 
 
         T_new = zeros(Float64, D_new, D_new, D_new, D_new)
@@ -58,8 +57,8 @@ function TRG(K, Dcut, no_iter)
         inds = inds_new 
         T = T_new
     end
-    lnZ += log(sum(T))
+    sum(T)
 end
 
-lnZ = TRG(0.44, 4, 2)
-println(exp(lnZ))
+Z = TRG(0.44, 4, 2)
+println(Z)
