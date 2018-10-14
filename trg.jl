@@ -13,11 +13,10 @@ function TRG(K, Dcut, no_iter)
     lnZ = 0.0 
     for n in collect(1:no_iter)
         
-        #println(n, maximum(T), minimum(T))
+        #println(n, " ", maximum(T), " ", minimum(T))
         maxval = maximum(T)
-        println(n, ", ", maxval)
         T = T/maxval 
-        lnZ += 2*(no_iter-n+1)*log(maxval)
+        lnZ += 2^(no_iter-n+1)*log(maxval)
 
         #D_new = D^2
         D_new = min(D^2, Dcut)
@@ -61,5 +60,9 @@ function TRG(K, Dcut, no_iter)
     lnZ += log(sum(T))
 end
 
-lnZ = TRG(0.44, 16, 3)
-println(exp(lnZ))
+beta = 0.44
+Dcut = 20
+for n in collect(1:2:20)
+    lnZ = TRG(beta, Dcut, n)
+    println(n, " ", lnZ/2^n)
+end 
