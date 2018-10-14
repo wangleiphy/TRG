@@ -1,5 +1,5 @@
-using LinearAlgebra:svd, Diagonal
-#using TensorOperations
+using LinearAlgebra:svd 
+using TensorOperations
 
 function TRG(K, Dcut, no_iter)
     D = 2
@@ -46,13 +46,13 @@ function TRG(K, Dcut, no_iter)
             S4[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
         end 
 
-        T_new = zeros(Float64, D_new, D_new, D_new, D_new)
-        for r in inds_new, u in inds_new, l in inds_new, d in inds_new
-            for a in inds, b in inds, g in inds, w in inds
-                T_new[r, u, l, d] += S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
-            end
-        end
-        #@tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
+        #T_new = zeros(Float64, D_new, D_new, D_new, D_new)
+        #for r in inds_new, u in inds_new, l in inds_new, d in inds_new
+        #    for a in inds, b in inds, g in inds, w in inds
+        #        T_new[r, u, l, d] += S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
+        #    end
+        #end
+        @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
 
         D = D_new
         inds = inds_new 
