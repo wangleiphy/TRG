@@ -63,7 +63,11 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         inds = inds_new 
         T = T_new
     end
-    lnZ += log(sum(T))
+    trace = 0.0
+    for i in inds
+        trace += T[i, i, i, i]
+    end
+    lnZ += log(trace)
 end
 
 Dcut = 24
