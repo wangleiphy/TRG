@@ -26,14 +26,8 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         D_new = min(D^2, Dcut)
         inds_new = collect(1:D_new)
 
-        #Ma = zeros(Float64, D^2, D^2)
-        #Mb = zeros(Float64, D^2, D^2)
-        #for r in inds, u in inds, l in inds, d in inds
-        #    Ma[l + D*(u-1), r + D*(d-1)] = T[r, u, l, d]
-        #    Mb[l + D*(d-1), r + D*(u-1)] = T[r, u, l, d]
-        #end
         Ma = reshape(permutedims(T, (3, 2, 1, 4)),  (D^2, D^2))
-        Mb = reshape(permutedims(T, (3, 4, 1, 2)),  (D^2, D^2))
+        Mb = reshape(permutedims(T, (4, 3, 2, 1)),  (D^2, D^2))
 
         S1 = zeros(Float64, D, D, D_new)
         S2 = zeros(Float64, D, D, D_new)

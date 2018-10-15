@@ -5,5 +5,5 @@ function integrand(x, K)
 end
 
 for K in collect(0.0:0.1:2.0)
-    println(K, " ", log(2) + hcubature(x->integrand(x, K), (0.0, 0.0), (2*pi, 2*pi), rtol=1e-6)[1]/(8*pi^2) )
+    println(K, " ", log(2) + hcubature(x->integrand(x, K), (0.0, 0.0), (2*pi, 2*pi), rtol=1e-10)[1]/(8*pi^2) )
 end
