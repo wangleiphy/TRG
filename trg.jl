@@ -24,7 +24,6 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         lnZ += 2^(no_iter-n+1)*log(maxval)
 
         D_new = min(D^2, Dcut)
-        inds_new = collect(1:D_new)
 
         Ma = reshape(permutedims(T, (3, 2, 1, 4)),  (D^2, D^2))
         Mb = reshape(permutedims(T, (4, 3, 2, 1)),  (D^2, D^2))
@@ -39,7 +38,6 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[l, b, g] * S4[d, g, w]
 
         D = D_new
-        inds = inds_new 
         T = T_new
     end
     trace = 0.0

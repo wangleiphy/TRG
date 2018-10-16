@@ -19,7 +19,6 @@ def TRG(K, Dcut, no_iter, device='cpu'):
         lnZ += 2**(no_iter-n)*torch.log(maxval)
 
         D_new = min(D**2, Dcut)
-        inds_new = range(D_new)
 
         Ma = T.permute(2, 1, 0, 3).contiguous().view(D**2, D**2)
         Mb = T.permute(3, 2, 1, 0).contiguous().view(D**2, D**2)
@@ -35,7 +34,6 @@ def TRG(K, Dcut, no_iter, device='cpu'):
         T_new = torch.einsum('war,abu,bgl,gwd->ruld', (S1, S2, S3, S4))
 
         D = D_new
-        inds = inds_new 
         T = T_new
 
     trace = 0.0
