@@ -1,6 +1,6 @@
 import torch
 
-def TRG(K, Dcut, no_iter, device='cpu', epsilon=1E-6):
+def TRG(K, Dcut, no_iter, device='cpu', epsilon=0):
     D = 2
 
     c = torch.sqrt(torch.cosh(K))
@@ -23,8 +23,7 @@ def TRG(K, Dcut, no_iter, device='cpu', epsilon=1E-6):
         Ua, Sa, Va = torch.svd(Ma)
         Ub, Sb, Vb = torch.svd(Mb)
 
-        #D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
-        D_new = min(D**2, Dcut)
+        D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
 
         S1 = (Ua[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
         S3 = (Va[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
