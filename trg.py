@@ -1,8 +1,7 @@
 import torch
 
-def TRG(K, Dcut, no_iter, device='cpu'):
+def TRG(K, Dcut, no_iter, device='cpu', epsilon=1E-6):
     D = 2
-    inds = range(D)
 
     c = torch.sqrt(torch.cosh(K))
     s = torch.sqrt(torch.sinh(K))
@@ -18,18 +17,18 @@ def TRG(K, Dcut, no_iter, device='cpu'):
         T = T/maxval 
         lnZ += 2**(no_iter-n)*torch.log(maxval)
 
-        D_new = min(D**2, Dcut)
-
         Ma = T.permute(2, 1, 0, 3).contiguous().view(D**2, D**2)
         Mb = T.permute(3, 2, 1, 0).contiguous().view(D**2, D**2)
 
-        U, S, V = torch.svd(Ma)
-        S1 = (U[:, :D_new]* torch.sqrt(S[:D_new])).view(D, D, D_new)
-        S3 = (V[:, :D_new]* torch.sqrt(S[:D_new])).view(D, D, D_new)
+        Ua, Sa, Va = torch.svd(Ma)
+        Ub, Sb, Vb = torch.svd(Mb)
 
-        U, S, V = torch.svd(Mb)
-        S2 = (U[:, :D_new]* torch.sqrt(S[:D_new])).view(D, D, D_new)
-        S4 = (V[:, :D_new]* torch.sqrt(S[:D_new])).view(D, D, D_new)
+        D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
+
+        S1 = (Ua[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
+        S3 = (Va[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
+        S2 = (Ub[:, :D_new]* torch.sqrt(Sb[:D_new])).view(D, D, D_new)
+        S4 = (Vb[:, :D_new]* torch.sqrt(Sb[:D_new])).view(D, D, D_new)
 
         T_new = torch.einsum('war,abu,bgl,gwd->ruld', (S1, S2, S3, S4))
 
@@ -37,7 +36,7 @@ def TRG(K, Dcut, no_iter, device='cpu'):
         T = T_new
 
     trace = 0.0
-    for i in inds:
+    for i in range(D):
         trace += T[i, i, i, i]
     lnZ += torch.log(trace)
 
@@ -51,10 +50,11 @@ if __name__=="__main__":
     args = parser.parse_args()
     device = torch.device("cpu" if args.cuda<0 else "cuda:"+str(args.cuda))
 
-    Dcut = 24
+    Dcut = 20
     n = 20
 
     for K in np.linspace(0, 2.0, 21):
-        beta = torch.tensor([K], device=device) 
+        beta = torch.tensor([K], device=device).requires_grad_()
         lnZ = TRG(beta, Dcut, n, device=device)
-        print (K, lnZ.item()/2**n)
+        lnZ.backward()
+        print (K, lnZ.item()/2**n, beta.grad.item())
