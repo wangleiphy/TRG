@@ -2,12 +2,22 @@ import torch
 
 def TRG(K, Dcut, no_iter, device='cpu', epsilon=0):
     D = 2
+    
+    #Boltzmann factor on a bond M=LR^T
+    M = torch.stack([torch.cat([torch.exp(K),  torch.exp(-K)]), 
+                     torch.cat([torch.exp(-K), torch.exp(K)])
+                    ])
+    U, S, V = torch.svd(M)
+    L = U*torch.sqrt(S) 
+    R = V*torch.sqrt(S)
 
-    c = torch.sqrt(torch.cosh(K))
-    s = torch.sqrt(torch.sinh(K))
-    M = torch.stack([torch.cat([c, s]), torch.cat([c, -s])])
+    #            L 
+    #            |
+    # T =  R^{T}-o-L
+    #            |
+    #            R^{T}
 
-    T = torch.einsum('ai,aj,ak,al->ijkl', (M, M, M, M))
+    T = torch.einsum('ai,aj,ak,al->ijkl', (L, L, R, R)) 
     
     lnZ = 0.0
     for n in range(no_iter):
