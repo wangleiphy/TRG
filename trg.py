@@ -23,7 +23,8 @@ def TRG(K, Dcut, no_iter, device='cpu', epsilon=1E-6):
         Ua, Sa, Va = torch.svd(Ma)
         Ub, Sb, Vb = torch.svd(Mb)
 
-        D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
+        #D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
+        D_new = min(D**2, Dcut)
 
         S1 = (Ua[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
         S3 = (Va[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
@@ -46,15 +47,17 @@ if __name__=="__main__":
     import numpy as np 
     import argparse
     parser = argparse.ArgumentParser(description='')
+    parser.add_argument("-float32", action='store_true', help="use float32")
     parser.add_argument("-cuda", type=int, default=-1, help="use GPU")
     args = parser.parse_args()
     device = torch.device("cpu" if args.cuda<0 else "cuda:"+str(args.cuda))
+    dtype = torch.float32 if args.float32 else torch.float64
 
     Dcut = 20
     n = 20
 
     for K in np.linspace(0, 2.0, 21):
-        beta = torch.tensor([K], device=device).requires_grad_()
+        beta = torch.tensor([K], dtype=dtype, device=device).requires_grad_()
         lnZ = TRG(beta, Dcut, n, device=device)
         lnZ.backward()
-        print (K, lnZ.item()/2**n, beta.grad.item())
+        print (K, lnZ.item()/2**n, beta.grad.item()/2**n)
