@@ -58,5 +58,6 @@ if __name__=="__main__":
     for K in np.linspace(0, 2.0, 21):
         beta = torch.tensor([K], dtype=dtype, device=device).requires_grad_()
         lnZ = TRG(beta, Dcut, n, device=device)
-        lnZ.backward()
-        print (K, lnZ.item()/2**n, beta.grad.item()/2**n)
+        dlnZ = torch.autograd.grad(lnZ, beta,create_graph=True)[0] #  En = -d lnZ / d beta
+        dlnZ2 = torch.autograd.grad(dlnZ, beta)[0] # Cv = beta^2 * d^2 lnZ / d beta^2
+        print (K, lnZ.item()/2**n, -dlnZ.item()/2**n, dlnZ2.item()*beta.item()**2/2**n)
