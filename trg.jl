@@ -1,4 +1,4 @@
-using LinearAlgebra:svd
+using LinearAlgebra:svd, Diagonal
 using TensorOperations
 
 function TRG(K::Float64, Dcut::Int, no_iter::Int)
@@ -24,17 +24,12 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         lnZ += 2^(no_iter-n+1)*log(maxval)
 
         D_new = min(D^2, Dcut)
-        inds_new = collect(1:D_new)
 
         Ma = reshape(permutedims(T, (3, 2, 1, 4)),  (D^2, D^2))
         Mb = reshape(permutedims(T, (4, 3, 2, 1)),  (D^2, D^2))
 
-        S1 = zeros(Float64, D, D, D_new)
-        S2 = zeros(Float64, D, D, D_new)
-        S3 = zeros(Float64, D, D, D_new)
-        S4 = zeros(Float64, D, D, D_new)
-
         F = svd(Ma)
+<<<<<<< HEAD
         for x in inds, y in inds, m in inds_new
             S1[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
             S3[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
@@ -44,21 +39,25 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
             S2[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
             S4[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
         end
+=======
+        S1 = reshape(F.U[:,1:D_new]*Diagonal(sqrt.(F.S[1:D_new])), (D, D, D_new))
+        S3 = reshape(Diagonal(sqrt.(F.S[1:D_new]))*F.Vt[1:D_new, :], (D_new, D, D))
+        F = svd(Mb)
+        S2 = reshape(F.U[:,1:D_new]*Diagonal(sqrt.(F.S[1:D_new])), (D, D, D_new))
+        S4 = reshape(Diagonal(sqrt.(F.S[1:D_new]))*F.Vt[1:D_new, :], (D_new, D, D))
+>>>>>>> 3fe5a29dfdf36f08b9fbb60c3d56b2961aea197e
 
-        #T_new = zeros(Float64, D_new, D_new, D_new, D_new)
-        #for r in inds_new, u in inds_new, l in inds_new, d in inds_new
-        #    for a in inds, b in inds, g in inds, w in inds
-        #        T_new[r, u, l, d] += S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
-        #    end
-        #end
-        @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
+        @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[l, b, g] * S4[d, g, w]
 
         D = D_new
+<<<<<<< HEAD
         inds = inds_new
+=======
+>>>>>>> 3fe5a29dfdf36f08b9fbb60c3d56b2961aea197e
         T = T_new
     end
     trace = 0.0
-    for i in inds
+    for i in collect(1:D)
         trace += T[i, i, i, i]
     end
     lnZ += log(trace)

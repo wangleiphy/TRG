@@ -1,16 +1,25 @@
 import torch
 
-def TRG(K, Dcut, no_iter):
+def TRG(K, Dcut, no_iter, device='cpu', epsilon=0):
     D = 2
-    inds = range(D)
-
-    c = torch.sqrt(torch.cosh(K))
-    s = torch.sqrt(torch.sinh(K))
-    M = torch.stack([torch.cat([c, s]), torch.cat([c, -s])])
-
-    T = torch.einsum('ai,aj,ak,al->ijkl', (M, M, M, M))
     
-    lnZ = torch.zeros(1)
+    #Boltzmann factor on a bond M=LR^T
+    M = torch.stack([torch.cat([torch.exp(K),  torch.exp(-K)]), 
+                     torch.cat([torch.exp(-K), torch.exp(K)])
+                    ])
+    U, S, V = torch.svd(M)
+    L = U*torch.sqrt(S) 
+    R = V*torch.sqrt(S)
+
+    #            L 
+    #            |
+    # T =  R^{T}-o-L
+    #            |
+    #            R^{T}
+
+    T = torch.einsum('ai,aj,ak,al->ijkl', (L, L, R, R)) 
+    
+    lnZ = 0.0
     for n in range(no_iter):
         
         #print(n, " ", T.max(), " ", T.min())
@@ -18,39 +27,26 @@ def TRG(K, Dcut, no_iter):
         T = T/maxval 
         lnZ += 2**(no_iter-n)*torch.log(maxval)
 
-        D_new = min(D**2, Dcut)
-        inds_new = range(D_new)
-
         Ma = T.permute(2, 1, 0, 3).contiguous().view(D**2, D**2)
         Mb = T.permute(3, 2, 1, 0).contiguous().view(D**2, D**2)
 
-        S1 = torch.zeros(D, D, D_new)
-        S2 = torch.zeros(D, D, D_new)
-        S3 = torch.zeros(D, D, D_new)
-        S4 = torch.zeros(D, D, D_new)
+        Ua, Sa, Va = torch.svd(Ma)
+        Ub, Sb, Vb = torch.svd(Mb)
 
-        U, S, V = torch.svd(Ma)
-        for x in inds:
-            for y in inds:
-                for m in inds_new:
-                    S1[x, y, m] = torch.sqrt(S[m]) * U[x+D*y, m]
-                    S3[x, y, m] = torch.sqrt(S[m]) * V.t()[m, x+D*y]
+        D_new = min(min(D**2, Dcut), min((Sa>epsilon).sum().item(), (Sb>epsilon).sum().item()))
 
-        U, S, V = torch.svd(Mb)
-        for x in inds: 
-            for y in inds:
-                for m in inds_new:
-                    S2[x, y, m] = torch.sqrt(S[m]) * U[x+D*y, m]
-                    S4[x, y, m] = torch.sqrt(S[m]) * V.t()[m, x+D*y]
+        S1 = (Ua[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
+        S3 = (Va[:, :D_new]* torch.sqrt(Sa[:D_new])).view(D, D, D_new)
+        S2 = (Ub[:, :D_new]* torch.sqrt(Sb[:D_new])).view(D, D, D_new)
+        S4 = (Vb[:, :D_new]* torch.sqrt(Sb[:D_new])).view(D, D, D_new)
 
         T_new = torch.einsum('war,abu,bgl,gwd->ruld', (S1, S2, S3, S4))
 
         D = D_new
-        inds = inds_new 
         T = T_new
 
     trace = 0.0
-    for i in inds:
+    for i in range(D):
         trace += T[i, i, i, i]
     lnZ += torch.log(trace)
 
@@ -58,12 +54,20 @@ def TRG(K, Dcut, no_iter):
 
 if __name__=="__main__":
     import numpy as np 
+    import argparse
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument("-float32", action='store_true', help="use float32")
+    parser.add_argument("-cuda", type=int, default=-1, help="use GPU")
+    args = parser.parse_args()
+    device = torch.device("cpu" if args.cuda<0 else "cuda:"+str(args.cuda))
+    dtype = torch.float32 if args.float32 else torch.float64
 
-    Dcut = 10
-    n = 10
+    Dcut = 20
+    n = 20
 
     for K in np.linspace(0, 2.0, 21):
-        beta = torch.tensor([K]).requires_grad_()
-        lnZ = TRG(beta, Dcut, n)
-        print(torch.autograd.grad(lnZ, beta))
-        print (K, lnZ.item()/2**n)
+        beta = torch.tensor([K], dtype=dtype, device=device).requires_grad_()
+        lnZ = TRG(beta, Dcut, n, device=device)
+        dlnZ = torch.autograd.grad(lnZ, beta,create_graph=True)[0] #  En = -d lnZ / d beta
+        dlnZ2 = torch.autograd.grad(dlnZ, beta)[0] # Cv = beta^2 * d^2 lnZ / d beta^2
+        print (K, lnZ.item()/2**n, -dlnZ.item()/2**n, dlnZ2.item()*beta.item()**2/2**n)
