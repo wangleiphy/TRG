@@ -3,10 +3,10 @@ using TensorOperations
 
 function TRG(K::Float64, Dcut::Int, no_iter::Int)
     D = 2
-    inds = collect(1:D) 
+    inds = collect(1:D)
 
     T = zeros(Float64, D, D, D, D)
-    M = [[sqrt(cosh(K)) sqrt(sinh(K))]; 
+    M = [[sqrt(cosh(K)) sqrt(sinh(K))];
          [sqrt(cosh(K)) -sqrt(sinh(K))];
          ]
     for i in inds, j in inds, k in inds, l in inds
@@ -15,12 +15,12 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         end
     end
 
-    lnZ = 0.0 
+    lnZ = 0.0
     for n in collect(1:no_iter)
-        
+
         #println(n, " ", maximum(T), " ", minimum(T))
         maxval = maximum(T)
-        T = T/maxval 
+        T = T/maxval
         lnZ += 2^(no_iter-n+1)*log(maxval)
 
         D_new = min(D^2, Dcut)
@@ -38,12 +38,12 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         for x in inds, y in inds, m in inds_new
             S1[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
             S3[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
-        end 
+        end
         F = svd(Mb)
         for x in inds, y in inds, m in inds_new
             S2[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
             S4[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
-        end 
+        end
 
         #T_new = zeros(Float64, D_new, D_new, D_new, D_new)
         #for r in inds_new, u in inds_new, l in inds_new, d in inds_new
@@ -54,7 +54,7 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[b, g, l] * S4[g, w, d]
 
         D = D_new
-        inds = inds_new 
+        inds = inds_new
         T = T_new
     end
     trace = 0.0
@@ -64,10 +64,19 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
     lnZ += log(trace)
 end
 
-Dcut = 24
-n = 20
+Dcut = 10
+n = 30
 
-for K in collect(0.0:0.1:2.0)
-    lnZ = TRG(K, Dcut, n)
-    println(K, " ", lnZ/2^n)
-end 
+ts = 0.1:0.1:3;
+β = inv.(ts);
+@show "=====TRG======"
+lnZ = []
+for K in β
+    t = 1.0/K
+    #T = Ising( K )
+    y = TRG(K, Dcut, n);
+    #@show lnZ
+    println(1/K, " ", y/2^n)
+    push!(lnZ,y/2^n)
+end
+F = - ts.* lnZ
