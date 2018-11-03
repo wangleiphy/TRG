@@ -1,13 +1,16 @@
 using TensorOperations
 using LinearAlgebra
 using JLD2
+function IsingMatrix(K::Float64)
+    M = [[sqrt(cosh(K)) sqrt(sinh(K))];
+         [sqrt(cosh(K)) -sqrt(sinh(K))];
+         ]
+end
 function Ising(K::Float64)
     D = 2;
     inds = 1:D;
     T = zeros(Float64, D, D, D, D)
-    M = [[sqrt(cosh(K)) sqrt(sinh(K))];
-         [sqrt(cosh(K)) -sqrt(sinh(K))];
-         ]
+    M = IsingMatrix( K )
     for i in inds, j in inds, k in inds, l in inds
         for a in inds
             T[i, j, k, l] += M[a, i] * M[a, j] * M[a, k] * M[a, l]
@@ -76,7 +79,39 @@ function HOTRG(T::Array{Float64} , Dcut::Int, no_iter::Int)
     lnZ += log(sum)/2^no_iter
     return lnZ
 end
-
+function OneIsingTensor( Ku::Float64, Kl::Float64, Kd::Float64,Kr::Float64)
+    T = zeros(Float64, 2, 2, 2, 2)
+    Mu = IsingMatrix( Ku )
+    Md = IsingMatrix( Kd )
+    Ml = IsingMatrix( Kl )
+    Mr = IsingMatrix( Kr )
+    inds = 1:2;
+    for i in inds, j in inds, k in inds, l in inds
+        for a in inds
+            T[i, j, k, l] += Mu[a, i] * Ml[a, j] * Md[a, k] * Mr[a, l]
+        end
+    end
+    return T
+end
+function SpinGlassTensor( Ks::Array{Tuple{Float64,Float64},2}, ix::Int,iy::Int)
+    # Construct the Tensor at site (i,j)
+    # Ks is a Nx * Ny matrix of all the coefficients (Jx,Jy)
+    # Square lattice of size (Lx,Ly) PBC
+    #   1,1 -- 1,2 -- ... 1,Ly ---
+    #    |      |           |
+    #   2,1 -- 2,2 -- ... 2,Ly ---
+    #    |      |           |
+    #    .      .     ...   .
+    #  Lx,1 -- Lx,2 .... Lx,Ly ---
+    #    \       |          |
+    Lx, Ly = size( Ks )
+    Kd = Ks[ix,iy][2]
+    Kr = Ks[ix,iy][1]
+    Ku = Ks[ix,iy ==1 ? Ly : iy-1][2]
+    Kl = Ks[ ix ==1 ? Lx : ix-1, iy][1]
+    T = OneIsingTensor( Ku, Kl, Kd, Kr )
+end
+function test()
 Dcut = 30
 n = 30
 @show "=====HOTRG======"
@@ -92,3 +127,4 @@ for K in β
     push!(lnZ,y)
 end
 F = - ts.* lnZ
+end
