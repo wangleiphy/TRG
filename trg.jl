@@ -29,31 +29,16 @@ function TRG(K::Float64, Dcut::Int, no_iter::Int)
         Mb = reshape(permutedims(T, (4, 3, 2, 1)),  (D^2, D^2))
 
         F = svd(Ma)
-<<<<<<< HEAD
-        for x in inds, y in inds, m in inds_new
-            S1[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
-            S3[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
-        end
-        F = svd(Mb)
-        for x in inds, y in inds, m in inds_new
-            S2[x, y, m] = sqrt(F.S[m]) * F.U[x+D*(y-1), m]
-            S4[x, y, m] = sqrt(F.S[m]) * F.Vt[m, x+D*(y-1)]
-        end
-=======
+
         S1 = reshape(F.U[:,1:D_new]*Diagonal(sqrt.(F.S[1:D_new])), (D, D, D_new))
         S3 = reshape(Diagonal(sqrt.(F.S[1:D_new]))*F.Vt[1:D_new, :], (D_new, D, D))
         F = svd(Mb)
         S2 = reshape(F.U[:,1:D_new]*Diagonal(sqrt.(F.S[1:D_new])), (D, D, D_new))
         S4 = reshape(Diagonal(sqrt.(F.S[1:D_new]))*F.Vt[1:D_new, :], (D_new, D, D))
->>>>>>> 3fe5a29dfdf36f08b9fbb60c3d56b2961aea197e
 
         @tensor T_new[r, u, l, d] := S1[w, a, r] * S2[a, b, u] * S3[l, b, g] * S4[d, g, w]
 
         D = D_new
-<<<<<<< HEAD
-        inds = inds_new
-=======
->>>>>>> 3fe5a29dfdf36f08b9fbb60c3d56b2961aea197e
         T = T_new
     end
     trace = 0.0
