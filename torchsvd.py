@@ -2,8 +2,8 @@ import numpy as np
 import scipy.linalg 
 import torch, pdb
 
-def clamp_inverse(x, epsilon=1E-15):
-    return x.sign()/torch.clamp(x.abs(), min=epsilon)
+def safe_inverse(x, epsilon=1E-20):
+    return x/(x**2 + epsilon)
 
 class SVD(torch.autograd.Function):
     @staticmethod
@@ -29,8 +29,7 @@ class SVD(torch.autograd.Function):
         Sinv = 1/S
         
         Sminus = (S - S[:, None])
-        Sminus.diagonal().fill_(np.inf)
-        Sminus = clamp_inverse(Sminus)
+        Sminus = safe_inverse(Sminus)
 
         Splus = (S + S[:, None])
         Splus.diagonal().fill_(np.inf)
