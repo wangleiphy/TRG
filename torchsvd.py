@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg 
 import torch, pdb
 
-def safe_inverse(x, epsilon=1E-20):
+def safe_inverse(x, epsilon=1E-12):
     return x/(x**2 + epsilon)
 
 class SVD(torch.autograd.Function):
@@ -26,36 +26,32 @@ class SVD(torch.autograd.Function):
         N = V.size(0)
         NS = len(S)
 
-        Sinv = 1/S
-        
-        Sminus = (S - S[:, None])
-        Sminus = safe_inverse(Sminus)
+        F = (S - S[:, None])
+        F = safe_inverse(F)
+        F.diagonal().fill_(0)
 
-        Splus = (S + S[:, None])
-        Splus.diagonal().fill_(np.inf)
-        Splus = 1/Splus
+        G = (S + S[:, None])
+        G.diagonal().fill_(np.inf)
+        G = 1/G 
 
         UdU = Ut @ dU
         VdV = Vt @ dV
 
-        A = (UdU-UdU.t())
-        B = (VdV-VdV.t())
-
-        Su = Sminus*(A+B)/2 
-        Sv = Splus*(A-B)/2 
+        Su = (F+G)*(UdU-UdU.t())/2
+        Sv = (F-G)*(VdV-VdV.t())/2
 
         dA = U @ (Su + Sv + torch.diag(dS)) @ Vt 
         if (M>NS):
-            dA = dA + (torch.eye(M, dtype=dU.dtype, device=dU.device) - U@Ut) @ (dU*Sinv) @ Vt 
+            dA = dA + (torch.eye(M, dtype=dU.dtype, device=dU.device) - U@Ut) @ (dU/S) @ Vt 
         if (N>NS):
-            dA = dA + (U*Sinv) @ dV.t() @ (torch.eye(N, dtype=dU.dtype, device=dU.device) - V@Vt)
+            dA = dA + (U/S) @ dV.t() @ (torch.eye(N, dtype=dU.dtype, device=dU.device) - V@Vt)
         #print (dU.norm().item(), dS.norm().item(), dV.norm().item())
         #print (Su.norm().item(), Sv.norm().item(), dS.norm().item())
         #print (dA1.norm().item(), dA2.norm().item(), dA3.norm().item())
         return dA
 
 def test_svd():
-    M, N = 50, 50
+    M, N = 50, 40
     torch.manual_seed(2)
     input = torch.rand(M, N, dtype=torch.float64, requires_grad=True)
     assert(torch.autograd.gradcheck(SVD.apply, input, eps=1e-6, atol=1e-4))
